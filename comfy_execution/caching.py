@@ -201,6 +201,21 @@ class BasicCache:
     def poll(self, **kwargs):
         pass
 
+    def get_local(self, node_id):
+        """Sync local-only cache lookup (no external providers)."""
+        if not self.initialized:
+            return None
+        cache_key = self.cache_key_set.get_data_key(node_id)
+        if cache_key in self.cache:
+            return self.cache[cache_key]
+        return None
+
+    def set_local(self, node_id, value):
+        """Sync local-only cache store (no external providers)."""
+        assert self.initialized
+        cache_key = self.cache_key_set.get_data_key(node_id)
+        self.cache[cache_key] = value
+
     async def _set_immediate(self, node_id, value):
         assert self.initialized
         cache_key = self.cache_key_set.get_data_key(node_id)
@@ -387,10 +402,21 @@ class HierarchicalCache(BasicCache):
             return None
         return await cache._get_immediate(node_id)
 
+    def get_local(self, node_id):
+        cache = self._get_cache_for(node_id)
+        if cache is None:
+            return None
+        return BasicCache.get_local(cache, node_id)
+
     async def set(self, node_id, value):
         cache = self._get_cache_for(node_id)
         assert cache is not None
         await cache._set_immediate(node_id, value)
+
+    def set_local(self, node_id, value):
+        cache = self._get_cache_for(node_id)
+        assert cache is not None
+        BasicCache.set_local(cache, node_id, value)
 
     async def ensure_subcache_for(self, node_id, children_ids):
         cache = self._get_cache_for(node_id)
@@ -414,7 +440,13 @@ class NullCache:
     async def get(self, node_id):
         return None
 
+    def get_local(self, node_id):
+        return None
+
     async def set(self, node_id, value):
+        pass
+
+    def set_local(self, node_id, value):
         pass
 
     async def ensure_subcache_for(self, node_id, children_ids):
