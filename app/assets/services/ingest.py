@@ -27,6 +27,7 @@ from app.assets.helpers import normalize_tags
 from app.assets.services.file_utils import get_size_and_mtime_ns
 from app.assets.services.path_utils import (
     compute_relative_filename,
+    get_name_and_tags_from_asset_path,
     resolve_destination_from_tags,
     validate_path_within_base,
 )
@@ -367,7 +368,18 @@ def register_file_in_place(
     owner_id: str = "",
     mime_type: str | None = None,
 ) -> UploadResult:
-    """Register an already-saved file in the asset database without moving it."""
+    """Register an already-saved file in the asset database without moving it.
+
+    Tags are derived from the filesystem path (root category + subfolder names),
+    merged with any caller-provided tags, matching the behavior of the scanner.
+    If the path is not under a known root, only the caller-provided tags are used.
+    """
+    try:
+        _, path_tags = get_name_and_tags_from_asset_path(abs_path)
+    except ValueError:
+        path_tags = []
+    merged_tags = normalize_tags([*path_tags, *tags])
+
     try:
         digest, _ = hashing.compute_blake3_hash(abs_path)
     except ImportError as e:
@@ -390,7 +402,7 @@ def register_file_in_place(
         mime_type=content_type,
         info_name=_sanitize_filename(name, fallback=digest),
         owner_id=owner_id,
-        tags=tags,
+        tags=merged_tags,
         tag_origin="upload",
         require_existing_tags=False,
     )
