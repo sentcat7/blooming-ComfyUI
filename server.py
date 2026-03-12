@@ -504,7 +504,8 @@ class PromptServer():
                 # node preview, it constructs /view?filename=<asset_hash>, so this
                 # endpoint must resolve blake3 hashes to their on-disk file paths.
                 if filename.startswith("blake3:"):
-                    result = resolve_hash_to_path(filename)
+                    owner_id = self.user_manager.get_request_user_id(request)
+                    result = resolve_hash_to_path(filename, owner_id=owner_id)
                     if result is None:
                         return web.Response(status=404)
                     file, filename = result.abs_path, result.download_name
