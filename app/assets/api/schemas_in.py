@@ -101,7 +101,7 @@ class UpdateAssetBody(BaseModel):
     name: str | None = None
     user_metadata: dict[str, Any] | None = None
     mime_type: str | None = None
-    preview_id: str | None = None
+    preview_id: str | None = None  # references an asset_reference id, not an asset id
 
     @model_validator(mode="after")
     def _validate_at_least_one_field(self):
@@ -123,7 +123,7 @@ class CreateFromHashBody(BaseModel):
     tags: list[str] = Field(default_factory=list)
     user_metadata: dict[str, Any] = Field(default_factory=dict)
     mime_type: str | None = None
-    preview_id: str | None = None
+    preview_id: str | None = None  # references an asset_reference id, not an asset id
 
     @field_validator("hash")
     @classmethod
@@ -241,7 +241,7 @@ class UploadAssetSpec(BaseModel):
     - user_metadata: arbitrary JSON object (optional)
     - hash: optional canonical 'blake3:<hex>' for validation / fast-path
     - mime_type: optional MIME type override
-    - preview_id: optional asset ID for preview
+    - preview_id: optional asset_reference ID for preview
 
     Files are stored using the content hash as filename stem.
     """
@@ -253,7 +253,7 @@ class UploadAssetSpec(BaseModel):
     user_metadata: dict[str, Any] = Field(default_factory=dict)
     hash: str | None = Field(default=None)
     mime_type: str | None = Field(default=None)
-    preview_id: str | None = Field(default=None)
+    preview_id: str | None = Field(default=None)  # references an asset_reference id
 
     @field_validator("hash", mode="before")
     @classmethod

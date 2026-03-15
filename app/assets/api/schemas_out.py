@@ -5,6 +5,9 @@ from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 
 class Asset(BaseModel):
+    """API view of an asset. Maps to DB ``AssetReference`` joined with its ``Asset`` blob;
+    ``id`` here is the AssetReference id, not the content-addressed Asset id."""
+
     id: str
     name: str
     asset_hash: str | None = None
@@ -12,7 +15,7 @@ class Asset(BaseModel):
     mime_type: str | None = None
     tags: list[str] = Field(default_factory=list)
     preview_url: str | None = None
-    preview_id: str | None = None
+    preview_id: str | None = None  # references an asset_reference id, not an asset id
     user_metadata: dict[str, Any] = Field(default_factory=dict)
     is_immutable: bool = False
     metadata: dict[str, Any] | None = None
