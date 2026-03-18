@@ -9,6 +9,8 @@ from sqlalchemy.orm import Session
 import app.assets.services.hashing as hashing
 from app.assets.database.queries import (
     add_tags_to_reference,
+    count_active_siblings,
+    create_stub_asset,
     fetch_reference_and_asset,
     get_asset_by_hash,
     get_reference_by_file_path,
@@ -26,7 +28,6 @@ from app.assets.database.queries import (
 from app.assets.helpers import get_utc_now, normalize_tags
 from app.assets.services.bulk_ingest import batch_insert_seed_assets
 from app.assets.services.file_utils import get_size_and_mtime_ns
-from app.assets.services.metadata_extract import extract_file_metadata
 from app.assets.services.path_utils import (
     compute_relative_filename,
     get_name_and_tags_from_asset_path,
@@ -146,7 +147,9 @@ def register_output_files(
         if not os.path.isfile(abs_path):
             continue
         try:
-            if ingest_existing_file(abs_path, user_metadata=user_metadata, job_id=job_id):
+            if ingest_existing_file(
+                abs_path, user_metadata=user_metadata, job_id=job_id
+            ):
                 registered += 1
         except Exception:
             logging.exception("Failed to register output: %s", abs_path)
@@ -185,19 +188,28 @@ def ingest_existing_file(
             existing_ref.is_missing = False
             existing_ref.deleted_at = None
             existing_ref.updated_at = now
-            # Reset enrichment so the enricher re-hashes
             existing_ref.enrichment_level = 0
-            # Clear the asset hash so enrich recomputes it
+
             asset = existing_ref.asset
             if asset:
-                asset.hash = None
-                asset.size_bytes = size_bytes
-                if mime_type:
-                    asset.mime_type = mime_type
+                # If other refs share this asset, detach to a new stub
+                # instead of mutating the shared row.
+                siblings = count_active_siblings(session, asset.id, existing_ref.id)
+                if siblings > 0:
+                    new_asset = create_stub_asset(
+                        session,
+                        size_bytes=size_bytes,
+                        mime_type=mime_type or asset.mime_type,
+                    )
+                    existing_ref.asset_id = new_asset.id
+                else:
+                    asset.hash = None
+                    asset.size_bytes = size_bytes
+                    if mime_type:
+                        asset.mime_type = mime_type
             session.commit()
             return True
 
-        metadata = extract_file_metadata(locator)
         spec = {
             "abs_path": abs_path,
             "size_bytes": size_bytes,
@@ -205,9 +217,9 @@ def ingest_existing_file(
             "info_name": name,
             "tags": tags,
             "fname": os.path.basename(abs_path),
-            "metadata": metadata,
+            "metadata": None,
             "hash": None,
-            "mime_type": mime_type or metadata.content_type,
+            "mime_type": mime_type,
             "job_id": job_id,
         }
         result = batch_insert_seed_assets(session, [spec], owner_id=owner_id)
@@ -262,7 +274,9 @@ def _register_existing_asset(
             return result
 
         new_meta = dict(user_metadata)
-        computed_filename = compute_relative_filename(ref.file_path) if ref.file_path else None
+        computed_filename = (
+            compute_relative_filename(ref.file_path) if ref.file_path else None
+        )
         if computed_filename:
             new_meta["filename"] = computed_filename
 
@@ -292,7 +306,6 @@ def _register_existing_asset(
         session.commit()
 
         return result
-
 
 
 def _update_metadata_with_filename(
@@ -475,8 +488,7 @@ def register_file_in_place(
 
     size_bytes, mtime_ns = get_size_and_mtime_ns(abs_path)
     content_type = mime_type or (
-        mimetypes.guess_type(abs_path, strict=False)[0]
-        or "application/octet-stream"
+        mimetypes.guess_type(abs_path, strict=False)[0] or "application/octet-stream"
     )
 
     ingest_result = _ingest_file_from_path(
@@ -527,7 +539,8 @@ def create_from_hash(
         result = _register_existing_asset(
             asset_hash=canonical,
             name=_sanitize_filename(
-                name, fallback=canonical.split(":", 1)[1] if ":" in canonical else canonical
+                name,
+                fallback=canonical.split(":", 1)[1] if ":" in canonical else canonical,
             ),
             user_metadata=user_metadata or {},
             tags=tags or [],

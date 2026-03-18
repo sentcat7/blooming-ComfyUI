@@ -4,7 +4,11 @@ from sqlalchemy.dialects import sqlite
 from sqlalchemy.orm import Session
 
 from app.assets.database.models import Asset, AssetReference
-from app.assets.database.queries.common import MAX_BIND_PARAMS, calculate_rows_per_statement, iter_chunks
+from app.assets.database.queries.common import (
+    MAX_BIND_PARAMS,
+    calculate_rows_per_statement,
+    iter_chunks,
+)
 
 
 def asset_exists_by_hash(
@@ -78,6 +82,18 @@ def upsert_asset(
     return asset, created, updated
 
 
+def create_stub_asset(
+    session: Session,
+    size_bytes: int,
+    mime_type: str | None = None,
+) -> Asset:
+    """Create a new asset with no hash (stub for later enrichment)."""
+    asset = Asset(size_bytes=size_bytes, mime_type=mime_type, hash=None)
+    session.add(asset)
+    session.flush()
+    return asset
+
+
 def bulk_insert_assets(
     session: Session,
     rows: list[dict],
@@ -99,9 +115,7 @@ def get_existing_asset_ids(
         return set()
     found: set[str] = set()
     for chunk in iter_chunks(asset_ids, MAX_BIND_PARAMS):
-        rows = session.execute(
-            select(Asset.id).where(Asset.id.in_(chunk))
-        ).fetchall()
+        rows = session.execute(select(Asset.id).where(Asset.id.in_(chunk))).fetchall()
         found.update(row[0] for row in rows)
     return found
 

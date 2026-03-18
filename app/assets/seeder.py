@@ -77,6 +77,8 @@ class _AssetSeeder:
     """
 
     def __init__(self) -> None:
+        # RLock is required because _run_scan() drains pending work while
+        # holding _lock and re-enters start() which also acquires _lock.
         self._lock = threading.RLock()
         self._state = State.IDLE
         self._progress: Progress | None = None
@@ -639,10 +641,14 @@ class _AssetSeeder:
                 pending = self._pending_enrich
                 if pending is not None:
                     self._pending_enrich = None
-                    self.start_enrich(
+                    if not self.start_enrich(
                         roots=pending["roots"],
                         compute_hashes=pending["compute_hashes"],
-                    )
+                    ):
+                        logging.warning(
+                            "Pending enrich scan could not start (roots=%s)",
+                            pending["roots"],
+                        )
 
     def _run_fast_phase(self, roots: tuple[RootType, ...]) -> tuple[int, int, int]:
         """Run phase 1: fast scan to create stub records.
