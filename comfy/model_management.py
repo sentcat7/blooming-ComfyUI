@@ -639,6 +639,8 @@ class LoadedModel:
         return True
 
     def model_use_more_vram(self, extra_memory, force_patch_weights=False):
+        if self.device != self.model.load_device:
+            logging.error(f"LoadedModel device mismatch: self.device={self.device}, model.load_device={self.model.load_device}, model_class={self.model.model.__class__.__name__}, is_multigpu={getattr(self.model, 'is_multigpu_base_clone', False)}, id(model)={id(self.model)}")
         return self.model.partially_load(self.device, extra_memory, force_patch_weights=force_patch_weights)
 
     def __eq__(self, other):

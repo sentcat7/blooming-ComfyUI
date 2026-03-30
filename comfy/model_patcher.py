@@ -1646,6 +1646,8 @@ class ModelPatcherDynamic(ModelPatcher):
         #now.
         assert not full_load
 
+        if device_to != self.load_device:
+            logging.error(f"ModelPatcherDynamic.load device mismatch: device_to={device_to}, self.load_device={self.load_device}, model_class={self.model.__class__.__name__}, is_multigpu_base_clone={getattr(self, 'is_multigpu_base_clone', False)}, id(self)={id(self)}")
         assert device_to == self.load_device
 
         num_patches = 0
