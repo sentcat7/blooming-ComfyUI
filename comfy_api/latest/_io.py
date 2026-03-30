@@ -43,9 +43,55 @@ class UploadType(str, Enum):
     model = "file_upload"
 
 
+class RemoteItemSchema:
+    """Describes how to map API response objects to rich dropdown items.
+
+    All *_field parameters use dot-path notation (e.g. ``"labels.gender"``).
+    ``label_field`` additionally supports template strings with ``{field}``
+    placeholders (e.g. ``"{name} ({labels.accent})"``).
+    """
+    def __init__(
+        self,
+        value_field: str,
+        label_field: str,
+        preview_url_field: str | None = None,
+        preview_type: Literal["image", "video", "audio"] = "image",
+        description_field: str | None = None,
+        search_fields: list[str] | None = None,
+        filter_field: str | None = None,
+    ):
+        self.value_field = value_field
+        """Dot-path to the unique identifier within each item. This value is stored in the widget and passed to execute()."""
+        self.label_field = label_field
+        """Dot-path to the display name, or a template string with {field} placeholders."""
+        self.preview_url_field = preview_url_field
+        """Dot-path to a preview media URL. If None, no preview is shown."""
+        self.preview_type = preview_type
+        """How to render the preview: "image", "video", or "audio"."""
+        self.description_field = description_field
+        """Optional dot-path or template for a subtitle line shown below the label."""
+        self.search_fields = search_fields
+        """Dot-paths to fields included in the search index. Defaults to [label_field]."""
+        self.filter_field = filter_field
+        """Optional dot-path to a categorical field for filter tabs."""
+
+    def as_dict(self):
+        return prune_dict({
+            "value_field": self.value_field,
+            "label_field": self.label_field,
+            "preview_url_field": self.preview_url_field,
+            "preview_type": self.preview_type,
+            "description_field": self.description_field,
+            "search_fields": self.search_fields,
+            "filter_field": self.filter_field,
+        })
+
+
 class RemoteOptions:
     def __init__(self, route: str, refresh_button: bool, control_after_refresh: Literal["first", "last"]="first",
-                 timeout: int=None, max_retries: int=None, refresh: int=None):
+                 timeout: int=None, max_retries: int=None, refresh: int=None,
+                 response_key: str=None, query_params: dict[str, str]=None,
+                 item_schema: RemoteItemSchema=None):
         self.route = route
         """The route to the remote source."""
         self.refresh_button = refresh_button
@@ -58,6 +104,12 @@ class RemoteOptions:
         """The maximum number of retries before aborting the request."""
         self.refresh = refresh
         """The TTL of the remote input's value in milliseconds. Specifies the interval at which the remote input's value is refreshed."""
+        self.response_key = response_key
+        """Dot-path to the items array in the response. If None, the entire response is used."""
+        self.query_params = query_params
+        """Static query parameters appended to the request URL."""
+        self.item_schema = item_schema
+        """When present, the frontend renders a rich dropdown with previews instead of a plain combo widget."""
 
     def as_dict(self):
         return prune_dict({
@@ -67,6 +119,9 @@ class RemoteOptions:
             "timeout": self.timeout,
             "max_retries": self.max_retries,
             "refresh": self.refresh,
+            "response_key": self.response_key,
+            "query_params": self.query_params,
+            "item_schema": self.item_schema.as_dict() if self.item_schema else None,
         })
 
 
@@ -2184,6 +2239,7 @@ class NodeReplace:
 __all__ = [
     "FolderType",
     "UploadType",
+    "RemoteItemSchema",
     "RemoteOptions",
     "NumberDisplay",
     "ControlAfterGenerate",
