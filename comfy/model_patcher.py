@@ -414,6 +414,14 @@ class ModelPatcher:
             n.model = temp_model_patcher.model
         else:
             n.model = copy.deepcopy(n.model)
+        # Clear VBAR state so the clone gets fresh, device-specific VBARs during load().
+        # deep-copied ModelVBAR objects share raw C pointers with the original, which causes
+        # double-free and thread-safety issues (concurrent vbar_fault on shared global state).
+        if hasattr(n.model, "dynamic_vbars"):
+            n.model.dynamic_vbars = {}
+        for m in n.model.modules():
+            if hasattr(m, "_v"):
+                delattr(m, "_v")
         # unlike for normal clone, backup dicts that shared same ref should not;
         # otherwise, patchers that have deep copies of base models will erroneously influence each other.
         n.backup = copy.deepcopy(n.backup)
