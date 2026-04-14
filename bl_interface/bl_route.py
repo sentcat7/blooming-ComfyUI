@@ -11,6 +11,7 @@ from aiohttp import web
 from typing import Optional
 
 import bl_execution.execution
+from comfyui_algo_api import use_switch_change_node
 
 
 class BLOutput:
@@ -58,7 +59,7 @@ class BLOutput:
             pass
         else:
             logging.warning(f"{output_type} not support")
-            # raise ValueError(f"BL_params:output_type {output_type} is not support, please use 'image' or 'video' or 'text'")
+            # raise ValueError(f"fe_params:output_type {output_type} is not support, please use 'image' or 'video' or 'text'")
 
         return result
 
@@ -95,6 +96,18 @@ class BLRoute:
             json_data =  await request.json()
             json_data = self.prompt_server.trigger_on_prompt(json_data)
 
+            switch_config = json_data.get("switch", {})
+            if switch_config:
+                if "algo" in switch_config and "switch" not in switch_config:
+                    switch_flags = [
+                        bool(value)
+                        for key, value in switch_config.items()
+                        if key.startswith("switch_")
+                    ]
+                    switch_config["switch"] = any(switch_flags)
+
+                json_data["prompt"] = use_switch_change_node(switch_config, json_data["prompt"])
+
             if "number" in json_data:
                 number = float(json_data['number'])
             else:
@@ -129,6 +142,8 @@ class BLRoute:
                             sensitive[sensitive_val] = extra_data.pop(sensitive_val)
                     extra_data["create_time"] = int(time.time() * 1000)  # timestamp in milliseconds
                     bl_params = json_data.get("bl_params", {})
+                    if not bl_params:
+                        bl_params = json_data.get("fe_params", {})
                     response = await asyncio.to_thread(self._forward, prompt, prompt_id, bl_params, extra_data, outputs_to_execute)
                     return web.json_response(response)
                 else:
@@ -186,9 +201,10 @@ class BLRoute:
         if isinstance(output_nodes, str):
             output_nodes = [output_nodes, ]
 
-        logging.info(f"rank: {os.getenv('RANK')}")
-        if os.getenv("RANK") == 0:
-            # get output result according to bl_params
+        rank = os.getenv("RANK")
+        logging.info(f"rank: {rank}")
+        if rank is None or str(rank) == "0":
+            # get output result according to fe_params
             for node in output_nodes:
                 pre_node, pre_node_idx = self._get_preview_node_index(prompt[node])
                 cache_result = self.exec.caches.outputs.get(pre_node).outputs[pre_node_idx]
