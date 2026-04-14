@@ -58,7 +58,7 @@ class BLOutput:
             pass
         else:
             logging.warning(f"{output_type} not support")
-            # raise ValueError(f"fe_params:output_type {output_type} is not support, please use 'image' or 'video' or 'text'")
+            # raise ValueError(f"BL_params:output_type {output_type} is not support, please use 'image' or 'video' or 'text'")
 
         return result
 
@@ -83,7 +83,7 @@ class BLRoute:
         self.number = 0
         self.log_prefix = "[Flow Engine] "
 
-        logging.info(self.log_prefix + "Init FERoute success")
+        logging.info(self.log_prefix + "Init BLRoute success")
 
     def setup_routes(self):
         @self.routes.post("/pid")
@@ -188,7 +188,7 @@ class BLRoute:
 
         logging.info(f"rank: {os.getenv('RANK')}")
         if os.getenv("RANK") == 0:
-            # get output result according to fe_params
+            # get output result according to bl_params
             for node in output_nodes:
                 pre_node, pre_node_idx = self._get_preview_node_index(prompt[node])
                 cache_result = self.exec.caches.outputs.get(pre_node).outputs[pre_node_idx]

@@ -6,6 +6,8 @@ import asyncio
 import threading
 
 import folder_paths
+import comfy.options
+comfy.options.enable_args_parsing()
 from bl_nodes.comfy.cli_args import args
 from bl_app.app.logger import setup_logger, print_startup_warnings
 from bl_utils.bl_pre_start import (
@@ -18,8 +20,9 @@ from bl_utils.bl_pre_start import (
 os.environ['HF_HUB_DISABLE_TELEMETRY'] = '1'
 os.environ['DO_NOT_TRACK'] = '1'
 
-setup_logger(log_level=args.verbose, use_stdout=args.log_stdout, parallel=args.parallel)
-
+parallel_mode = getattr(args, "parallel", False)
+setup_logger(log_level=args.verbose, use_stdout=args.log_stdout, parallel=parallel_mode)
+# 在导入参数前没有开启参数解析，导致你传的 listen 和 port 被忽略，始终回落到默认 8188。
 apply_custom_paths()
 execute_prestartup_script()
 
@@ -134,7 +137,7 @@ def start_flowengine(asyncio_loop=None):
         await prompt_server.setup()
         await run(prompt_server, 
                   address=args.listen, 
-                  port=args.port + int(os.getenv("RANK", 0)) if args.parallel else args.port, 
+                  port=args.port + int(os.getenv("RANK", 0)) if parallel_mode else args.port, 
                   verbose=not args.dont_print_server, 
                   call_on_start=call_on_start)
 

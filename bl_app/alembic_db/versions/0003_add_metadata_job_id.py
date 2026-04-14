@@ -9,8 +9,17 @@ Create Date: 2026-03-09
 
 from alembic import op
 import sqlalchemy as sa
+import os
+import sys
 
-from app.database.models import NAMING_CONVENTION
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
+try:
+    from bl_app.app.database.models import NAMING_CONVENTION
+except ModuleNotFoundError:
+    from app.database.models import NAMING_CONVENTION
 
 revision = "0003_add_metadata_job_id"
 down_revision = "0002_merge_to_asset_references"

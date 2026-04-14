@@ -4,7 +4,7 @@ import shutil
 from bl_app.app.logger import log_startup_warning
 from bl_utils.install_util import get_missing_requirements_message
 from filelock import FileLock, Timeout
-from comfy.cli_args import args
+from bl_nodes.comfy.cli_args import args
 
 _DB_AVAILABLE = False
 Session = None
@@ -19,8 +19,8 @@ try:
     from sqlalchemy.orm import sessionmaker
     from sqlalchemy.pool import StaticPool
 
-    from app.database.models import Base
-    import app.assets.database.models  # noqa: F401 — register models with Base.metadata
+    from bl_app.app.database.models import Base
+    import bl_app.app.assets.database.models  # noqa: F401 — register models with Base.metadata
 
     _DB_AVAILABLE = True
 except ImportError as e:

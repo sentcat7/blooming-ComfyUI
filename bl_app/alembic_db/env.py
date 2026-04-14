@@ -1,5 +1,7 @@
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
+import os
+import sys
 
 from alembic import context
 
@@ -7,8 +9,15 @@ from alembic import context
 # access to the values within the .ini file in use.
 config = context.config
 
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
-from app.database.models import Base, NAMING_CONVENTION
+
+try:
+    from bl_app.app.database.models import Base, NAMING_CONVENTION
+except ModuleNotFoundError:
+    from app.database.models import Base, NAMING_CONVENTION
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
