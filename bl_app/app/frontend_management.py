@@ -17,10 +17,10 @@ from importlib.metadata import version
 import requests
 from typing_extensions import NotRequired
 
-from utils.install_util import get_missing_requirements_message, get_required_packages_versions
+from bl_utils.install_util import get_missing_requirements_message, get_required_packages_versions
 
-from comfy.cli_args import DEFAULT_VERSION_STRING
-import app.logger
+from bl_nodes.comfy.cli_args import DEFAULT_VERSION_STRING
+import bl_app.app.logger
 
 
 def frontend_install_warning_message():

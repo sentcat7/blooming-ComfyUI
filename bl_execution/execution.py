@@ -12,10 +12,14 @@ import asyncio
 
 import torch
 
-from comfy.cli_args import args
-import comfy.memory_management
-import comfy.model_management
+from bl_nodes.comfy.cli_args import args
+import bl_nodes.comfy.memory_management
+import bl_nodes.comfy.model_management
 import comfy_aimdo.model_vbar
+
+import bl_nodes.comfy.model_management
+from bl_nodes.latent_preview import set_preview_method
+import bl_nodes.nodes
 
 from latent_preview import set_preview_method
 import nodes

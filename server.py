@@ -7,7 +7,7 @@ import time
 import nodes
 import folder_paths
 import execution
-from comfy_execution.jobs import JobStatus, get_job, get_all_jobs
+from bl_execution.comfy_execution.jobs import JobStatus, get_job, get_all_jobs
 import uuid
 import urllib
 import json
@@ -25,30 +25,30 @@ from aiohttp import web
 import logging
 
 import mimetypes
-from comfy.cli_args import args
-import comfy.utils
-import comfy.model_management
+from bl_nodes.comfy.cli_args import args
+import bl_nodes.comfy.utils
+import bl_nodes.comfy.model_management
 from comfy_api import feature_flags
 import node_helpers
-from comfyui_version import __version__
-from app.frontend_management import FrontendManager, parse_version
+from bl_utils.comfyui_version import __version__
+from bl_app.app.frontend_management import FrontendManager, parse_version
 from comfy_api.internal import _ComfyNodeInternal
-from app.assets.seeder import asset_seeder
-from app.assets.api.routes import register_assets_routes
-from app.assets.services.ingest import register_file_in_place
-from app.assets.services.asset_management import resolve_hash_to_path
+from bl_app.app.assets.seeder import asset_seeder
+from bl_app.app.assets.api.routes import register_assets_routes
+from bl_app.app.assets.services.ingest import register_file_in_place
+from bl_app.app.assets.services.asset_management import resolve_hash_to_path
 
-from app.user_manager import UserManager
-from app.model_manager import ModelFileManager
-from app.custom_node_manager import CustomNodeManager
-from app.subgraph_manager import SubgraphManager
-from app.node_replace_manager import NodeReplaceManager
+from bl_app.app.user_manager import UserManager
+from bl_app.app.model_manager import ModelFileManager
+from bl_app.app.custom_node_manager import CustomNodeManager
+from bl_app.app.subgraph_manager import SubgraphManager
+from bl_app.app.node_replace_manager import NodeReplaceManager
 from typing import Optional, Union
-from api_server.routes.internal.internal_routes import InternalRoutes
-from protocol import BinaryEventTypes
+from bl_app.api_server.routes.internal.internal_routes import InternalRoutes
+from bl_utils.protocol import BinaryEventTypes
 
 # Import cache control middleware
-from middleware.cache_middleware import cache_control
+from bl_app.middleware.cache_middleware import cache_control
 
 if args.enable_manager:
     import comfyui_manager

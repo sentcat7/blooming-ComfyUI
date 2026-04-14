@@ -1,6 +1,7 @@
 from collections import deque
 from datetime import datetime
 import io
+import os
 import logging
 import sys
 import threading
@@ -51,7 +52,7 @@ def on_flush(callback):
     if stderr_interceptor is not None:
         stderr_interceptor.on_flush(callback)
 
-def setup_logger(log_level: str = 'INFO', capacity: int = 300, use_stdout: bool = False):
+def setup_logger(log_level: str = 'INFO', capacity: int = 300, use_stdout: bool = False, parallel: bool = False):
     global logs
     if logs:
         return
@@ -69,6 +70,13 @@ def setup_logger(log_level: str = 'INFO', capacity: int = 300, use_stdout: bool 
     logger.setLevel(log_level)
 
     stream_handler = logging.StreamHandler()
+
+    if parallel:
+        rank = int(os.getenv("RANK", 0))
+        format_str = f"[DEVICE: {rank}] %(message)s"
+    else:
+        format_str = "%(message)s"
+
     stream_handler.setFormatter(logging.Formatter("%(message)s"))
 
     if use_stdout:

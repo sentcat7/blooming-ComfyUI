@@ -10,10 +10,10 @@ from PIL import Image
 from aiohttp import web
 from typing import Optional
 
-import fe_execution.execution
+import bl_execution.execution
 
 
-class FEOutput:
+class BLOutput:
     @staticmethod
     def _base64_to_str(img_list):
         for i in range(len(img_list)):
@@ -63,20 +63,20 @@ class FEOutput:
         return result
 
 
-class FERoute:
+class BLRoute:
     def __init__(self, prompt_server, args):
         self.routes: web.RouteTableDef = web.RouteTableDef()
         self._app: Optional[web.Application] = None
         self.prompt_server = prompt_server
 
-        cache_type = fe_execution.execution.CacheType.CLASSIC
+        cache_type = bl_execution.execution.CacheType.CLASSIC
         if args.cache_lru > 0:
-            cache_type = fe_execution.execution.CacheType.LRU
+            cache_type = bl_execution.execution.CacheType.LRU
         elif args.cache_ram > 0:
-            cache_type = fe_execution.execution.CacheType.RAM_PRESSURE
+            cache_type = bl_execution.execution.CacheType.RAM_PRESSURE
         elif args.cache_none:
-            cache_type = fe_execution.execution.CacheType.NONE
-        self.exec = fe_execution.execution.PromptExecutor(
+            cache_type = bl_execution.execution.CacheType.NONE
+        self.exec = bl_execution.execution.PromptExecutor(
             server=self.prompt_server, 
             cache_type=cache_type, cache_args={ "lru" : args.cache_lru, "ram" : args.cache_ram })
 
@@ -87,11 +87,11 @@ class FERoute:
 
     def setup_routes(self):
         @self.routes.post("/pid")
-        async def fe_api_pid(request):
+        async def bl_api_pid(request):
             return web.json_response({"pid": os.getpid()})
         
         @self.routes.post('/base')
-        async def fe_api_route(request):
+        async def bl_api_route(request):
             json_data =  await request.json()
             json_data = self.prompt_server.trigger_on_prompt(json_data)
 
@@ -113,7 +113,7 @@ class FERoute:
                 if "partial_execution_targets" in json_data:
                     partial_execution_targets = json_data["partial_execution_targets"]
 
-                valid = await fe_execution.execution.validate_prompt(prompt_id, prompt, partial_execution_targets)
+                valid = await bl_execution.execution.validate_prompt(prompt_id, prompt, partial_execution_targets)
                 extra_data = {}
                 if "extra_data" in json_data:
                     extra_data = json_data["extra_data"]
@@ -124,12 +124,12 @@ class FERoute:
                 if valid[0]:
                     outputs_to_execute = valid[2]
                     sensitive = {}
-                    for sensitive_val in fe_execution.execution.SENSITIVE_EXTRA_DATA_KEYS:
+                    for sensitive_val in bl_execution.execution.SENSITIVE_EXTRA_DATA_KEYS:
                         if sensitive_val in extra_data:
                             sensitive[sensitive_val] = extra_data.pop(sensitive_val)
                     extra_data["create_time"] = int(time.time() * 1000)  # timestamp in milliseconds
-                    fe_params = json_data.get("fe_params", {})
-                    response = await asyncio.to_thread(self._forward, prompt, prompt_id, fe_params, extra_data, outputs_to_execute)
+                    bl_params = json_data.get("bl_params", {})
+                    response = await asyncio.to_thread(self._forward, prompt, prompt_id, bl_params, extra_data, outputs_to_execute)
                     return web.json_response(response)
                 else:
                     logging.warning(f"{self.log_prefix} invalid prompt: {valid[1]}")
@@ -143,13 +143,13 @@ class FERoute:
                 }
                 return web.json_response({"error": error, "node_errors": {}}) 
 
-    def _forward(self, prompt: dict, prompt_id: str, fe_params: dict, extra_data: dict, outputs_to_execute: dict):
+    def _forward(self, prompt: dict, prompt_id: str, bl_params: dict, extra_data: dict, outputs_to_execute: dict):
         """API forward execute nodes
 
         Args:
             prompt (dict): input prompt dict
             prompt_id (str): uuid for one task
-            fe_params (dict): fe_params
+            bl_params (dict): bl_params
             extra_data (dict): extra_data
             outputs_to_execute (dict): outputs_to_execute
 
@@ -163,13 +163,13 @@ class FERoute:
             "detail": None
         }
 
-        if len(fe_params) == 0:
-            logging.warning(f"{self.log_prefix} input fe_params is empty, exit")
-            response['detail'] = f"input fe_params is empty, exit"
+        if len(bl_params) == 0:
+            logging.warning(f"{self.log_prefix} input bl_params is empty, exit")
+            response['detail'] = f"input bl_params is empty, exit"
             return response
 
         logging.info(f"{self.log_prefix} Processing forward: job_id: {prompt_id}")
-        logging.info(f"{self.log_prefix} fe_params: {fe_params}\n")
+        logging.info(f"{self.log_prefix} bl_params: {bl_params}\n")
 
         # main execute code
         try:
@@ -181,8 +181,8 @@ class FERoute:
             response['detail'] = str(e)
             return response
         
-        output_nodes = fe_params.get("output_nodes", [])
-        output_type = fe_params.get("output_type", "")
+        output_nodes = bl_params.get("output_nodes", [])
+        output_type = bl_params.get("output_type", "")
         if isinstance(output_nodes, str):
             output_nodes = [output_nodes, ]
 
@@ -193,7 +193,7 @@ class FERoute:
                 pre_node, pre_node_idx = self._get_preview_node_index(prompt[node])
                 cache_result = self.exec.caches.outputs.get(pre_node).outputs[pre_node_idx]
 
-                response['result'][node] = FEOutput.get_output(output_type=output_type, cache=cache_result)
+                response['result'][node] = BLOutput.get_output(output_type=output_type, cache=cache_result)
 
         logging.info(f"{self.log_prefix} Processing forward: job_id: {response.get('prompt_id')} completed.")
 

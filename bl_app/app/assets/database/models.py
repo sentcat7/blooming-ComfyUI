@@ -19,8 +19,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, foreign, mapped_column, relationship
 
-from app.assets.helpers import get_utc_now
-from app.database.models import Base
+from bl_app.app.assets.helpers import get_utc_now
+from bl_app.app.database.models import Base
 
 
 class Asset(Base):

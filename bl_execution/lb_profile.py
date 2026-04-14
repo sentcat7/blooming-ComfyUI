@@ -162,7 +162,7 @@ class record_func(ContextDecorator):
         return False
 
 
-class FEProfiler:
+class BLProfiler:
     """轻量级、非侵入式性能统计工具"""
     
     def __init__(self, name: str = "default"):
@@ -177,12 +177,12 @@ class FEProfiler:
         """统计信息清零"""
         self.data.clear()
         self.total_record = NodeRecord("TOTAL")
-        # print(f"[FEProfiler] 性能统计已重置")
+        # print(f"[BLProfiler] 性能统计已重置")
     
     def start(self):
         """开始统计"""
         if self.is_recording:
-            # print(f"[FEProfiler] 统计已经在进行中")
+            # print(f"[BLProfiler] 统计已经在进行中")
             return
             
         self.is_recording = True
@@ -201,7 +201,7 @@ class FEProfiler:
         
         # 初始化资源基准
         self._initial_resources = self._get_current_resources()
-        # print(f"[FEProfiler] 性能统计已开始")
+        # print(f"[BLProfiler] 性能统计已开始")
     
     def stop(self):
         """结束统计"""
@@ -209,7 +209,7 @@ class FEProfiler:
         _init_profiler_state()
         
         if not self.is_recording:
-            # print(f"[FEProfiler] 统计未在进行中")
+            # print(f"[BLProfiler] 统计未在进行中")
             return
             
         self.is_recording = False
@@ -223,7 +223,7 @@ class FEProfiler:
         elapsed = time.perf_counter() - self.start_time
         self.total_record.add_time(elapsed)
         
-        # print(f"[FEProfiler] 性能统计已结束，总耗时: {elapsed:.3f}秒")
+        # print(f"[BLProfiler] 性能统计已结束，总耗时: {elapsed:.3f}秒")
     
     def record_node(self, name: str, elapsed: float, cpu_usage: float, 
                     memory_usage: float, gpu_memory_usage: float):
@@ -288,7 +288,7 @@ class FEProfiler:
             sort_by: 排序方式，可选 "name", "total_time", "avg_time", "call_count"
         """
         if not self.data:
-            print("[FEProfiler] 没有性能数据可展示")
+            print("[BLProfiler] 没有性能数据可展示")
             return
         
         if output_format == "terminal":
@@ -298,7 +298,7 @@ class FEProfiler:
         # elif output_format == "html":
         #     self._display_html(save_path, show_children)
         else:
-            print(f"[FEProfiler] 不支持的输出格式: {output_format}")
+            print(f"[BLProfiler] 不支持的输出格式: {output_format}")
     
     def _get_display_data(self, show_children: bool = False) -> List[Dict]:
         """获取要显示的数据"""
@@ -349,7 +349,7 @@ class FEProfiler:
         display_data = self._get_display_data(show_children)
         
         if not display_data:
-            print("[FEProfiler] 没有性能数据可显示")
+            print("[BLProfiler] 没有性能数据可显示")
             return
         
         # 排序

@@ -6,6 +6,17 @@ import mimetypes
 import logging
 from typing import Literal, List
 from collections.abc import Collection
+import sys
+
+BL_BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+BL_EXEC_PATH = os.path.join(BL_BASE_PATH, "bl_execution")
+BL_NODE_PATH = os.path.join(BL_BASE_PATH, "bl_nodes")
+BL_UTIL_PATH = os.path.join(BL_BASE_PATH, "bl_utils")
+
+sys.path.append(BL_NODE_PATH)
+sys.path.append(BL_EXEC_PATH)
+sys.path.append(BL_UTIL_PATH)
+
 
 from comfy.cli_args import args
 
@@ -51,6 +62,16 @@ folder_names_and_paths["classifiers"] = ([os.path.join(models_dir, "classifiers"
 folder_names_and_paths["model_patches"] = ([os.path.join(models_dir, "model_patches")], supported_pt_extensions)
 
 folder_names_and_paths["audio_encoders"] = ([os.path.join(models_dir, "audio_encoders")], supported_pt_extensions)
+
+# 原始wan2.2 多卡 相关模型-留样
+folder_names_and_paths["wan2.2_loras"] = ([os.path.join(models_dir, "wan2_2_models/loras")], supported_pt_extensions)
+folder_names_and_paths["wan2.2_diffusion_models"] = ([os.path.join(models_dir, "wan2_2_models/diffusion_models")], supported_pt_extensions)
+folder_names_and_paths["wan2.2_unet"] = ([os.path.join(models_dir, "wan2_2_models/unet")], supported_pt_extensions)
+folder_names_and_paths["wan2.2_vae"] = ([os.path.join(models_dir, "wan2_2_models/vae")], supported_pt_extensions)
+folder_names_and_paths["wan2.2_vae_approx"] = ([os.path.join(models_dir, "wan2_2_models/vae_approx")], supported_pt_extensions)
+folder_names_and_paths["wan2.2_clip_vision"] = ([os.path.join(models_dir, "wan2_2_models/clip_vision")], supported_pt_extensions)
+folder_names_and_paths["wan2.2_text_encoders"] = ([os.path.join(models_dir, "wan2_2_models/text_encoders")], supported_pt_extensions)
+folder_names_and_paths["dipnet"] = ([os.path.join(models_dir, "wan2_2_models/checkpoints")], supported_pt_extensions)
 
 output_directory = os.path.join(base_path, "output")
 temp_directory = os.path.join(base_path, "temp")

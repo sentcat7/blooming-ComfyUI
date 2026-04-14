@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Callable
 
-from app.assets.scanner import (
+from bl_app.app.assets.scanner import (
     ENRICHMENT_METADATA,
     ENRICHMENT_STUB,
     RootType,
@@ -22,7 +22,7 @@ from app.assets.scanner import (
     mark_missing_outside_prefixes_safely,
     sync_root_safely,
 )
-from app.database.db import dependencies_available
+from bl_app.app.database.db import dependencies_available
 
 
 class ScanInProgressError(Exception):
