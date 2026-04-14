@@ -1,5 +1,5 @@
-import comfy.options
-comfy.options.enable_args_parsing()
+import bl_nodes.comfy.options
+bl_nodes.comfy.options.enable_args_parsing()
 
 import os
 import importlib.util
@@ -7,20 +7,20 @@ import shutil
 import importlib.metadata
 import folder_paths
 import time
-from comfy.cli_args import args, enables_dynamic_vram
-from app.logger import setup_logger
-from app.assets.seeder import asset_seeder
-from app.assets.services import register_output_files
+from bl_nodes.comfy.cli_args import args, enables_dynamic_vram
+from bl_app.app.logger import setup_logger, print_startup_warnings
+from bl_app.app.assets.seeder import asset_seeder
+from bl_app.app.assets.services import register_output_files
 import itertools
-import utils.extra_config
-from utils.mime_types import init_mime_types
+import bl_utils.extra_config
+from bl_utils.mime_types import init_mime_types
 import faulthandler
 import logging
 import sys
-from comfy_execution.progress import get_progress_state
-from comfy_execution.utils import get_executing_context
-from comfy_api import feature_flags
-from app.database.db import init_db, dependencies_available
+from bl_execution.comfy_execution.progress import get_progress_state
+from bl_execution.comfy_execution.utils import get_executing_context
+from bl_nodes.comfy_api import feature_flags
+from bl_app.app.database.db import init_db, dependencies_available
 
 if __name__ == "__main__":
     #NOTE: These do not do anything on core ComfyUI, they are for custom nodes.
@@ -193,24 +193,23 @@ if 'torch' in sys.modules:
     logging.warning("WARNING: Potential Error in code: Torch already imported, torch should never be imported before this point.")
 
 
-import comfy.utils
+import bl_nodes.comfy.utils
 
 import execution
 import server
 from protocol import BinaryEventTypes
 import nodes
-import comfy.model_management
-import comfyui_version
-import app.logger
+import bl_nodes.comfy.model_management
+import bl_utils.comfyui_version as comfyui_version
 import hook_breaker_ac10a0
 
-import comfy.memory_management
-import comfy.model_patcher
+import bl_nodes.comfy.memory_management
+import bl_nodes.comfy.model_patcher
 
-if args.enable_dynamic_vram or (enables_dynamic_vram() and comfy.model_management.is_nvidia() and not comfy.model_management.is_wsl()):
-    if (not args.enable_dynamic_vram) and (comfy.model_management.torch_version_numeric < (2, 8)):
+if args.enable_dynamic_vram or (enables_dynamic_vram() and bl_nodes.comfy.model_management.is_nvidia() and not bl_nodes.comfy.model_management.is_wsl()):
+    if (not args.enable_dynamic_vram) and (bl_nodes.comfy.model_management.torch_version_numeric < (2, 8)):
         logging.warning("Unsupported Pytorch detected. DynamicVRAM support requires Pytorch version 2.8 or later. Falling back to legacy ModelPatcher. VRAM estimates may be unreliable especially on Windows")
-    elif comfy_aimdo.control.init_device(comfy.model_management.get_torch_device().index):
+    elif comfy_aimdo.control.init_device(bl_nodes.comfy.model_management.get_torch_device().index):
         if args.verbose == 'DEBUG':
             comfy_aimdo.control.set_log_debug()
         elif args.verbose == 'CRITICAL':
@@ -222,16 +221,16 @@ if args.enable_dynamic_vram or (enables_dynamic_vram() and comfy.model_managemen
         else: #INFO
             comfy_aimdo.control.set_log_info()
 
-        comfy.model_patcher.CoreModelPatcher = comfy.model_patcher.ModelPatcherDynamic
-        comfy.memory_management.aimdo_enabled = True
+        bl_nodes.comfy.model_patcher.CoreModelPatcher = bl_nodes.comfy.model_patcher.ModelPatcherDynamic
+        bl_nodes.comfy.memory_management.aimdo_enabled = True
         logging.info("DynamicVRAM support detected and enabled")
     else:
         logging.warning("No working comfy-aimdo install detected. DynamicVRAM support disabled. Falling back to legacy ModelPatcher. VRAM estimates may be unreliable especially on Windows")
 
 
 def cuda_malloc_warning():
-    device = comfy.model_management.get_torch_device()
-    device_name = comfy.model_management.get_torch_device_name(device)
+    device = bl_nodes.comfy.model_management.get_torch_device()
+    device_name = bl_nodes.comfy.model_management.get_torch_device_name(device)
     cuda_malloc_warning = False
     if "cudaMallocAsync" in device_name:
         for b in cuda_malloc.blacklist:
@@ -277,7 +276,7 @@ def prompt_worker(q, server_instance):
     current_time: float = 0.0
     cache_ram = args.cache_ram
     if cache_ram < 0:
-        cache_ram = min(32.0, max(4.0, comfy.model_management.total_ram * 0.25 / 1024.0))
+        cache_ram = min(32.0, max(4.0, bl_nodes.comfy.model_management.total_ram * 0.25 / 1024.0))
 
     cache_type = execution.CacheType.CLASSIC
     if args.cache_lru > 0:
@@ -342,7 +341,7 @@ def prompt_worker(q, server_instance):
         free_memory = flags.get("free_memory", False)
 
         if flags.get("unload_models", free_memory):
-            comfy.model_management.unload_all_models()
+            bl_nodes.comfy.model_management.unload_all_models()
             need_gc = True
             last_gc_collect = 0
 
@@ -355,7 +354,7 @@ def prompt_worker(q, server_instance):
             current_time = time.perf_counter()
             if (current_time - last_gc_collect) > gc_collect_interval:
                 gc.collect()
-                comfy.model_management.soft_empty_cache()
+                bl_nodes.comfy.model_management.soft_empty_cache()
                 last_gc_collect = current_time
                 need_gc = False
                 hook_breaker_ac10a0.restore_functions()
@@ -380,7 +379,7 @@ def hijack_progress(server_instance):
             prompt_id = executing_context.prompt_id
         if node_id is None and executing_context is not None:
             node_id = executing_context.node_id
-        comfy.model_management.throw_exception_if_processing_interrupted()
+        bl_nodes.comfy.model_management.throw_exception_if_processing_interrupted()
         if prompt_id is None:
             prompt_id = server_instance.last_prompt_id
         if node_id is None:
@@ -402,7 +401,7 @@ def hijack_progress(server_instance):
                     server_instance.client_id,
                 )
 
-    comfy.utils.set_progress_bar_global_hook(hook)
+    bl_nodes.comfy.utils.set_progress_bar_global_hook(hook)
 
 
 def cleanup_temp():
@@ -522,7 +521,7 @@ if __name__ == "__main__":
     event_loop, _, start_all_func = start_comfyui()
     try:
         x = start_all_func()
-        app.logger.print_startup_warnings()
+        print_startup_warnings()
         event_loop.run_until_complete(x)
     except KeyboardInterrupt:
         logging.info("\nStopped server")

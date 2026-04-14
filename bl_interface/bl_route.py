@@ -11,7 +11,11 @@ from aiohttp import web
 from typing import Optional
 
 import bl_execution.execution
-from comfyui_algo_api import use_switch_change_node
+try:
+    from .comfyui_algo_api import use_switch_change_node
+except ImportError:
+    # Fallback for direct execution where bl_interface is not treated as a package.
+    from comfyui_algo_api import use_switch_change_node
 
 
 class BLOutput:
