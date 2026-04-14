@@ -6,8 +6,8 @@ from typing import Callable
 from aiohttp import web
 
 import folder_paths
-from app.assets.api.schemas_in import ParsedUpload, UploadError
-from app.assets.helpers import validate_blake3_hash
+from bl_app.app.assets.api.schemas_in import ParsedUpload, UploadError
+from bl_app.app.assets.helpers import validate_blake3_hash
 
 
 def normalize_and_validate_hash(s: str) -> str:

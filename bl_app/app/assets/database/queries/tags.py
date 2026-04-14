@@ -7,20 +7,20 @@ from sqlalchemy.dialects import sqlite
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.assets.database.models import (
+from bl_app.app.assets.database.models import (
     Asset,
     AssetReference,
     AssetReferenceMeta,
     AssetReferenceTag,
     Tag,
 )
-from app.assets.database.queries.common import (
+from bl_app.app.assets.database.queries.common import (
     apply_metadata_filter,
     apply_tag_filters,
     build_visible_owner_clause,
     iter_row_chunks,
 )
-from app.assets.helpers import escape_sql_like_string, get_utc_now, normalize_tags
+from bl_app.app.assets.helpers import escape_sql_like_string, get_utc_now, normalize_tags
 
 
 @dataclass(frozen=True)

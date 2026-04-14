@@ -1,8 +1,8 @@
 from aiohttp import web
 from typing import Optional
 from folder_paths import folder_names_and_paths, get_directory_by_type
-from api_server.services.terminal_service import TerminalService
-import app.logger
+from bl_app.api_server.services.terminal_service import TerminalService
+import bl_app.app.logger
 import os
 
 class InternalRoutes:

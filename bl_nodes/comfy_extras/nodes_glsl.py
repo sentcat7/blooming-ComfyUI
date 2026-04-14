@@ -12,7 +12,7 @@ import torch
 import nodes
 from comfy_api.latest import ComfyExtension, io, ui
 from typing_extensions import override
-from utils.install_util import get_missing_requirements_message
+from bl_utils.install_util import get_missing_requirements_message
 
 logger = logging.getLogger(__name__)
 

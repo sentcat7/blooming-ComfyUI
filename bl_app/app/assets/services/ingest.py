@@ -6,8 +6,8 @@ from typing import Any, Sequence
 
 from sqlalchemy.orm import Session
 
-import app.assets.services.hashing as hashing
-from app.assets.database.queries import (
+import bl_app.app.assets.services.hashing as hashing
+from bl_app.app.assets.database.queries import (
     add_tags_to_reference,
     count_active_siblings,
     create_stub_asset,
@@ -26,16 +26,16 @@ from app.assets.database.queries import (
     upsert_reference,
     validate_tags_exist,
 )
-from app.assets.helpers import get_utc_now, normalize_tags
-from app.assets.services.bulk_ingest import batch_insert_seed_assets
-from app.assets.services.file_utils import get_size_and_mtime_ns
-from app.assets.services.path_utils import (
+from bl_app.app.assets.helpers import get_utc_now, normalize_tags
+from bl_app.app.assets.services.bulk_ingest import batch_insert_seed_assets
+from bl_app.app.assets.services.file_utils import get_size_and_mtime_ns
+from bl_app.app.assets.services.path_utils import (
     compute_relative_filename,
     get_name_and_tags_from_asset_path,
     resolve_destination_from_tags,
     validate_path_within_base,
 )
-from app.assets.services.schemas import (
+from bl_app.app.assets.services.schemas import (
     IngestResult,
     RegisterAssetResult,
     UploadResult,
@@ -43,7 +43,7 @@ from app.assets.services.schemas import (
     extract_asset_data,
     extract_reference_data,
 )
-from app.database.db import create_session
+from bl_app.app.database.db import create_session
 
 
 def _ingest_file_from_path(

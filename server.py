@@ -200,7 +200,7 @@ def create_block_external_middleware():
 
 
 class PromptServer():
-    def __init__(self, loop):
+    def __init__(self, loop, bl_mode: bool = False):
         PromptServer.instance = self
 
         self.user_manager = UserManager()
@@ -215,6 +215,14 @@ class PromptServer():
         self.messages = asyncio.Queue()
         self.client_session:Optional[aiohttp.ClientSession] = None
         self.number = 0
+        self.bl_mode = bl_mode
+        if self.bl_mode:
+            try:
+                from bl_interface.bl_route import BLRoute
+            except Exception:
+                logging.error("bl_interface.bl_route not available, using fallback stub for BLRoute")
+                raise ImportError("bl_interface.bl_route not available, using fallback stub for BLRoute")
+            self.bl_route = BLRoute(self, args)
 
         middlewares = [cache_control, deprecation_warning]
         if args.enable_compress_response_body:
@@ -368,7 +376,8 @@ class PromptServer():
             return type_dir, dir_type
 
         def compare_image_hash(filepath, image):
-            hasher = node_helpers.hasher()
+            # hasher = node_helpers.hasher()  修改
+            hasher = fe_utils.prtocol.hasher()
 
             # function to compare hashes of two images to see if it already exists, fix to #3465
             if os.path.exists(filepath):
@@ -635,7 +644,7 @@ class PromptServer():
             safetensors_path = folder_paths.get_full_path(folder_name, filename)
             if safetensors_path is None:
                 return web.Response(status=404)
-            out = comfy.utils.safetensors_header(safetensors_path, max_size=1024*1024)
+            out = bl_nodes.comfy.utils.safetensors_header(safetensors_path, max_size=1024*1024)
             if out is None:
                 return web.Response(status=404)
             dt = json.loads(out)
@@ -645,13 +654,13 @@ class PromptServer():
 
         @routes.get("/system_stats")
         async def system_stats(request):
-            device = comfy.model_management.get_torch_device()
-            device_name = comfy.model_management.get_torch_device_name(device)
-            cpu_device = comfy.model_management.torch.device("cpu")
-            ram_total = comfy.model_management.get_total_memory(cpu_device)
-            ram_free = comfy.model_management.get_free_memory(cpu_device)
-            vram_total, torch_vram_total = comfy.model_management.get_total_memory(device, torch_total_too=True)
-            vram_free, torch_vram_free = comfy.model_management.get_free_memory(device, torch_free_too=True)
+            device = bl_nodes.comfy.model_management.get_torch_device()
+            device_name = bl_nodes.comfy.model_management.get_torch_device_name(device)
+            cpu_device = bl_nodes.comfy.model_management.torch.device("cpu")
+            ram_total = bl_nodes.comfy.model_management.get_total_memory(cpu_device)
+            ram_free = bl_nodes.comfy.model_management.get_free_memory(cpu_device)
+            vram_total, torch_vram_total = bl_nodes.comfy.model_management.get_total_memory(device, torch_total_too=True)
+            vram_free, torch_vram_free = bl_nodes.comfy.model_management.get_free_memory(device, torch_free_too=True)
             required_frontend_version = FrontendManager.get_required_frontend_version()
             installed_templates_version = FrontendManager.get_installed_templates_version()
             required_templates_version = FrontendManager.get_required_templates_version()
@@ -666,7 +675,7 @@ class PromptServer():
                     "installed_templates_version": installed_templates_version,
                     "required_templates_version": required_templates_version,
                     "python_version": sys.version,
-                    "pytorch_version": comfy.model_management.torch_version,
+                    "pytorch_version": bl_nodes.comfy.model_management.torch_version,
                     "embedded_python": os.path.split(os.path.split(sys.executable)[0])[1] == "python_embeded",
                     "argv": sys.argv
                 },
@@ -693,7 +702,8 @@ class PromptServer():
             return web.json_response(self.get_queue_info())
 
         def node_info(node_class):
-            obj_class = nodes.NODE_CLASS_MAPPINGS[node_class]
+            # obj_class = nodes.NODE_CLASS_MAPPINGS[node_class] 修改
+            obj_class = bl_nodes.nodes.NODE_CLASS_MAPPINGS[node_class]
             if issubclass(obj_class, _ComfyNodeInternal):
                 return obj_class.GET_NODE_INFO_V1()
             info = {}
@@ -704,7 +714,7 @@ class PromptServer():
             info['output_is_list'] = obj_class.OUTPUT_IS_LIST if hasattr(obj_class, 'OUTPUT_IS_LIST') else [False] * len(obj_class.RETURN_TYPES)
             info['output_name'] = obj_class.RETURN_NAMES if hasattr(obj_class, 'RETURN_NAMES') else info['output']
             info['name'] = node_class
-            info['display_name'] = nodes.NODE_DISPLAY_NAME_MAPPINGS[node_class] if node_class in nodes.NODE_DISPLAY_NAME_MAPPINGS.keys() else node_class
+            info['display_name'] = bl_nodes.nodes.NODE_DISPLAY_NAME_MAPPINGS[node_class] if node_class in bl_nodes.nodes.NODE_DISPLAY_NAME_MAPPINGS.keys() else node_class
             info['description'] = obj_class.DESCRIPTION if hasattr(obj_class,'DESCRIPTION') else ''
             info['python_module'] = getattr(obj_class, "RELATIVE_PYTHON_MODULE", "nodes")
             info['category'] = 'sd'
@@ -746,7 +756,7 @@ class PromptServer():
             asset_seeder.start(roots=("models", "input", "output"))
             with folder_paths.cache_helper:
                 out = {}
-                for x in nodes.NODE_CLASS_MAPPINGS:
+                for x in bl_nodes.nodes.NODE_CLASS_MAPPINGS:
                     try:
                         out[x] = node_info(x)
                     except Exception:

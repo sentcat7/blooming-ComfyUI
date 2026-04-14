@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, TypedDict
 
 from sqlalchemy.orm import Session
 
-from app.assets.database.queries import (
+from bl_app.app.assets.database.queries import (
     bulk_insert_assets,
     bulk_insert_references_ignore_conflicts,
     bulk_insert_tags_and_meta,
@@ -19,7 +19,7 @@ from app.assets.database.queries import (
     get_unreferenced_unhashed_asset_ids,
     restore_references_by_paths,
 )
-from app.assets.helpers import get_utc_now
+from bl_app.app.assets.helpers import get_utc_now
 
 if TYPE_CHECKING:
     from app.assets.services.metadata_extract import ExtractedMetadata

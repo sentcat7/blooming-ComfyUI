@@ -1,8 +1,8 @@
 import logging
 import os
 import shutil
-from app.logger import log_startup_warning
-from utils.install_util import get_missing_requirements_message
+from bl_app.app.logger import log_startup_warning
+from bl_utils.install_util import get_missing_requirements_message
 from filelock import FileLock, Timeout
 from comfy.cli_args import args
 

@@ -7,8 +7,8 @@ from typing import Iterable, Sequence
 import sqlalchemy as sa
 from sqlalchemy import exists
 
-from app.assets.database.models import AssetReference, AssetReferenceMeta, AssetReferenceTag
-from app.assets.helpers import escape_sql_like_string, normalize_tags
+from bl_app.app.assets.database.models import AssetReference, AssetReferenceMeta, AssetReferenceTag
+from bl_app.app.assets.helpers import escape_sql_like_string, normalize_tags
 
 MAX_BIND_PARAMS = 800
 

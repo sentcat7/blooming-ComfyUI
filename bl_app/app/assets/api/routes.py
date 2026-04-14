@@ -11,20 +11,20 @@ from aiohttp import web
 from pydantic import ValidationError
 
 import folder_paths
-from app import user_manager
-from app.assets.api import schemas_in, schemas_out
-from app.assets.services import schemas
-from app.assets.api.schemas_in import (
+from bl_app.app import user_manager
+from bl_app.app.assets.api import schemas_in, schemas_out
+from bl_app.app.assets.services import schemas
+from bl_app.app.assets.api.schemas_in import (
     AssetValidationError,
     UploadError,
 )
-from app.assets.helpers import validate_blake3_hash
-from app.assets.api.upload import (
+from bl_app.app.assets.helpers import validate_blake3_hash
+from bl_app.app.assets.api.upload import (
     delete_temp_file_if_exists,
     parse_multipart_upload,
 )
-from app.assets.seeder import ScanInProgressError, asset_seeder
-from app.assets.services import (
+from bl_app.app.assets.seeder import ScanInProgressError, asset_seeder
+from bl_app.app.assets.services import (
     DependencyMissingError,
     HashMismatchError,
     apply_tags,
@@ -39,7 +39,7 @@ from app.assets.services import (
     update_asset_metadata,
     upload_from_temp_path,
 )
-from app.assets.services.tagging import list_tag_histogram
+from bl_app.app.assets.services.tagging import list_tag_histogram
 
 ROUTES = web.RouteTableDef()
 USER_MANAGER: user_manager.UserManager | None = None
